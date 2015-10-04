@@ -32,7 +32,7 @@ def hello():
 
 
 @app.route('/scores/', methods=['GET'])
-def hello():
+def scores():
     return jsonify({'tasks': tasks})
 
 
