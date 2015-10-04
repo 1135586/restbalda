@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask.ext.sqlalchemy import SQLAlchemy
 import os
 from datetime import datetime
+from sqlalchemy import desc
 
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
@@ -10,49 +11,22 @@ db = SQLAlchemy(app)
 #from models import Scores
 import models
 
-tasks = [
-    {
-        'id': 1,
-        'title': u'Buy groceries',
-        'description': u'Milk, Cheese, Pizza, Fruit, Tylenol',
-        'done': False
-    },
-    {
-        'id': 2,
-        'title': u'Learn Python',
-        'description': u'Need to find a good Python tutorial on the web',
-        'done': False
-    }
-]
 
-
-@app.route('/', methods=['GET'])
+@app.route('/', methods=['GET', 'POST'])
 def hello():
-    score = models.Scores(user_id = 'Lololo', score = 1232, timestamp = datetime.now())
-    db.session.add(score)
-    db.session.commit()
-    return "Hi Man!"
-
-
-#@app.route('/', methods=['GET'])
-#def hello():
-#    return "Hi Man!"
-
-
-@app.route('/scores/', methods=['GET', 'POST'])
-def scores():
-    #if request.method == "POST":
-    return jsonify({'tasks': tasks})
-
-
-#@app.route('/scores/', methods=['GET'])
-#def scores():
-#    return jsonify({'tasks': tasks})
-
-
-@app.route('/<name>')
-def hello_name(name):
-    return "Hello {}!".format(name)
+    if request.method == "GET":
+        hight_scores = models.Scores.query.order_by(desc(models.Scores.score)).first()
+        return jsonify({'hight_scores': str(hight_scores.score)})
+    if request.method == "POST":
+        user_score = models.Scores.query.filter_by(user_id = request.json['user_id']).first()
+        if user_score is None:
+            new_score = models.Scores(user_id = request.json['user_id'], score = request.json['score'], timestamp = datetime.now())
+            db.session.add(new_score)
+            db.session.commit()
+            return "201"
+        user_score.score = request.json['score']
+        db.session.commit()
+        return "201"
 
 
 if __name__ == '__main__':
